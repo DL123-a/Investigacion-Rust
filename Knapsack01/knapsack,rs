@@ -1,0 +1,154 @@
+use std::cmp::max;
+
+/// Estructura que representa un objeto
+#[derive(Debug)]
+struct Item {
+    weight: usize,
+    value: usize,
+}
+
+/// Función que resuelve el problema Knapsack 0/1
+///
+/// Parámetros:
+/// - items: lista de objetos
+/// - capacity: capacidad máxima de la mochila
+///
+/// Retorna:
+/// - valor máximo posible
+/// - lista de índices de objetos seleccionados
+fn knapsack(items: &[Item], capacity: usize) -> (usize, Vec<usize>) {
+    let n = items.len();
+
+    // Caso borde: lista vacía o capacidad cero
+    if n == 0 || capacity == 0 {
+        return (0, Vec::new());
+    }
+
+    // Tabla DP
+    let mut dp = vec![vec![0; capacity + 1]; n + 1];
+
+    // Construcción de la tabla dinámica
+    for i in 1..=n {
+        for w in 0..=capacity {
+            if items[i - 1].weight <= w {
+                dp[i][w] = max(
+                    items[i - 1].value
+                        + dp[i - 1][w - items[i - 1].weight],
+                    dp[i - 1][w],
+                );
+            } else {
+                dp[i][w] = dp[i - 1][w];
+            }
+        }
+    }
+
+    // Reconstrucción de objetos seleccionados
+    let mut selected = Vec::new();
+    let mut w = capacity;
+
+    for i in (1..=n).rev() {
+        if dp[i][w] != dp[i - 1][w] {
+            selected.push(i - 1);
+
+            if items[i - 1].weight <= w {
+                w -= items[i - 1].weight;
+            }
+        }
+    }
+
+    selected.reverse();
+
+    (dp[n][capacity], selected)
+}
+
+/// Función auxiliar para imprimir resultados
+fn run_test(test_name: &str, items: Vec<Item>, capacity: usize) {
+    println!("==============================");
+    println!("{}", test_name);
+    println!("Capacidad de la mochila: {}", capacity);
+
+    println!("\nObjetos disponibles:");
+    for (i, item) in items.iter().enumerate() {
+        println!(
+            "Objeto {} -> Peso: {}, Valor: {}",
+            i + 1,
+            item.weight,
+            item.value
+        );
+    }
+
+    let (max_value, selected) = knapsack(&items, capacity);
+
+    println!("\nValor máximo obtenido: {}", max_value);
+
+    if selected.is_empty() {
+        println!("No se seleccionaron objetos.");
+    } else {
+        println!("Objetos seleccionados:");
+
+        for index in selected {
+            println!(
+                "Objeto {} -> Peso: {}, Valor: {}",
+                index + 1,
+                items[index].weight,
+                items[index].value
+            );
+        }
+    }
+
+    println!("==============================\n");
+}
+
+fn main() {
+
+    // ==========================================
+    // CASO DE PRUEBA 1
+    // Caso estándar
+    // ==========================================
+
+    let items1 = vec![
+        Item { weight: 1, value: 1 },
+        Item { weight: 3, value: 4 },
+        Item { weight: 4, value: 5 },
+        Item { weight: 5, value: 7 },
+    ];
+
+    run_test("CASO 1: Caso estándar", items1, 7);
+
+    // ==========================================
+    // CASO DE PRUEBA 2
+    // Capacidad cero
+    // ==========================================
+
+    let items2 = vec![
+        Item { weight: 2, value: 10 },
+        Item { weight: 3, value: 15 },
+    ];
+
+    run_test("CASO 2: Capacidad cero", items2, 0);
+
+    // ==========================================
+    // CASO DE PRUEBA 3
+    // Objetos demasiado pesados
+    // ==========================================
+
+    let items3 = vec![
+        Item { weight: 10, value: 100 },
+        Item { weight: 20, value: 200 },
+    ];
+
+    run_test(
+        "CASO 3: Objetos demasiado pesados",
+        items3,
+        5,
+    );
+
+    // ==========================================
+    // CASO DE PRUEBA 4
+    // Lista vacía
+    // ==========================================
+
+    let items4 = vec![];
+
+    run_test("CASO 4: Lista vacía", items4, 10);
+}
